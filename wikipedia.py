@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-import streamlit as st  # Import Streamlit library
+import streamlit as st
 
 import cohere
 import weaviate
