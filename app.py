@@ -1,70 +1,75 @@
 import streamlit as st
 import wikipedia
+from dotenv import load_dotenv
+import os
+import logging
+from tenacity import retry, wait_random_exponential, stop_after_attempt
+import cohere
+import weaviate
 
+# Load environment variables from .env file
+load_dotenv()
+
+# -----------------------------------------------------------------------------
+# User API Credentials
+# -----------------------------------------------------------------------------
+st.sidebar.subheader("🔑 User API Credentials")
+
+# Replace 'YOUR_COHERE_API_KEY' and 'YOUR_WEAVIATE_API_KEY' with actual API keys
+cohere_api_key = st.sidebar.text_input("Cohere API Key", key="cohere_api_key", value=os.getenv("YOUR_COHERE_API_KEY"))
+weaviate_api_key = st.sidebar.text_input("Weaviate API Key", key="weaviate_api_key", value=os.getenv("YOUR_WEAVIATE_API_KEY"))
+
+# Replace 'YOUR_WEAVIATE_URL' with actual Weaviate URL
+weaviate_url = st.sidebar.text_input("Weaviate URL", key="weaviate_url", value=os.getenv("YOUR_WEAVIATE_URL"))
+
+# Check if any API key or URL is missing
+if not cohere_api_key or not weaviate_api_key or not weaviate_url:
+    st.error("Please provide both Cohere and Weaviate API keys, and Weaviate URL.")
+    st.stop()
+
+# Initialize Cohere and Weaviate clients
+cohere_client = cohere.Client(cohere_api_key)
+weaviate_auth_config = weaviate.auth.AuthApiKey(api_key=weaviate_api_key)
+weaviate_client = weaviate.Client(
+    url=weaviate_url,
+    auth_client_secret=weaviate_auth_config,
+    additional_headers={"X-Cohere-Api-Key": cohere_api_key},
+)
+
+# -----------------------------------------------------------------------------
+# The rest of the Code
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Wikipedia Semantic Search",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={
-        "About": "Built by @dcarpintero with Cohere and Weaviate"},
+    menu_items={"About": "Built by @dcarpintero with Cohere and Weaviate"},
 )
 
-class SearchEngine:
-    WIKIPEDIA_PROPERTIES = ["text", "title", "url", "views", "lang", "_additional { distance score }"]
 
-    def __init__(self):
-        self.cohere_api_key = None
-        self.weaviate_api_key = None
-        self.weaviate_url = None
-        self.cohere = None
-        self.weaviate = None
-        self.load_api_credentials()
-        self.initialize_clients()
+@st.cache_resource(show_spinner=False)
+def load_semantic_engine():
+    try:
+        return wikipedia.SearchEngine()
+    except (OSError, EnvironmentError) as e:
+        st.error(f'Semantic Engine Error {e}')
+        st.stop()
 
-    def load_api_credentials(self):
-        """
-        Load API credentials from user input or environment variables
-        """
-        st.title("Search Engine Configuration")
 
-        # Collect user inputs for API keys and URL
-        self.cohere_api_key = st.text_input("Enter Cohere API Key:")
-        self.weaviate_api_key = st.text_input("Enter Weaviate API Key:")
-        self.weaviate_url = st.text_input("Enter Weaviate URL:")
+wikisearch = load_semantic_engine()
 
-        # Sidebar with user input values
-        st.sidebar.title("User Inputs")
-        st.sidebar.write(f"Cohere API Key: {self.cohere_api_key}")
-        st.sidebar.write(f"Weaviate API Key: {self.weaviate_api_key}")
-        st.sidebar.write(f"Weaviate URL: {self.weaviate_url}")
+@st.cache_data
+def query_bm25(query, lang='en', top_n=10):
+    try:
+        return wikisearch.with_bm25(query, lang=lang, top_n=top_n)
+    except (Exception) as e:
+        st.error(f'Querying Engine Error {e}')
 
-    def initialize_clients(self):
-        """
-        Initialize Cohere and Weaviate clients
-        """
-        if not self.cohere_api_key or not self.weaviate_api_key or not self.weaviate_url:
-            st.warning("⚠️ API keys and URL are required.")
-            st.stop()
+# Continue with the rest of your existing code...
 
-        try:
-            self.cohere = cohere.Client(api_key=self.cohere_api_key)
-            self.weaviate = weaviate.Client(
-                url=self.weaviate_url, api_key=self.weaviate_api_key)
-            logging.info("Initialized SearchEngine with Cohere and Weaviate clients")
-        except Exception as e:
-            st.error(f"Error initializing clients: {e}")
-            st.stop()
-
-    # Other methods remain unchanged
-
-# The rest of your Streamlit app remains the same
-
-# Streamlit app
-def main():
-    search_engine = SearchEngine()
-
-    # Your existing Streamlit app logic
-
+# -----------------------------------------------------------------------------
+# (Optional) Run Streamlit App
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    main()
+    # ... (Continue with your existing Streamlit code)
