@@ -3,7 +3,6 @@ import wikipedia
 from dotenv import load_dotenv
 import os
 import logging
-from tenacity import retry, wait_random_exponential, stop_after_attempt
 import cohere
 import weaviate
 
@@ -16,11 +15,11 @@ load_dotenv()
 st.sidebar.subheader("🔑 User API Credentials")
 
 # Replace 'YOUR_COHERE_API_KEY' and 'YOUR_WEAVIATE_API_KEY' with actual API keys
-cohere_api_key = st.sidebar.text_input("Cohere API Key", key="cohere_api_key", value=os.getenv("YOUR_COHERE_API_KEY"))
-weaviate_api_key = st.sidebar.text_input("Weaviate API Key", key="weaviate_api_key", value=os.getenv("YOUR_WEAVIATE_API_KEY"))
+cohere_api_key = st.text_input("Cohere API Key", key="cohere_api_key", value=os.getenv("YOUR_COHERE_API_KEY"))
+weaviate_api_key = st.text_input("Weaviate API Key", key="weaviate_api_key", value=os.getenv("YOUR_WEAVIATE_API_KEY"))
 
 # Replace 'YOUR_WEAVIATE_URL' with actual Weaviate URL
-weaviate_url = st.sidebar.text_input("Weaviate URL", key="weaviate_url", value=os.getenv("YOUR_WEAVIATE_URL"))
+weaviate_url = st.text_input("Weaviate URL", key="weaviate_url", value=os.getenv("YOUR_WEAVIATE_URL"))
 
 # Check if any API key or URL is missing
 if not cohere_api_key or not weaviate_api_key or not weaviate_url:
@@ -47,26 +46,7 @@ st.set_page_config(
     menu_items={"About": "Built by @dcarpintero with Cohere and Weaviate"},
 )
 
-
-@st.cache_resource(show_spinner=False)
-def load_semantic_engine():
-    try:
-        return wikipedia.SearchEngine()
-    except (OSError, EnvironmentError) as e:
-        st.error(f'Semantic Engine Error {e}')
-        st.stop()
-
-
-wikisearch = load_semantic_engine()
-
-@st.cache_data
-def query_bm25(query, lang='en', top_n=10):
-    try:
-        return wikisearch.with_bm25(query, lang=lang, top_n=top_n)
-    except (Exception) as e:
-        st.error(f'Querying Engine Error {e}')
-
-# Continue with the rest of your existing code...
+# Continue with the rest of your code...
 
 # -----------------------------------------------------------------------------
 # (Optional) Run Streamlit App
