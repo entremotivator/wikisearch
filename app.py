@@ -1,3 +1,14 @@
+Multilingual Retrieval Augmented Generation demo built with Cohere, Weaviate and Streamlit.
+It implements Semantic Search on Wikipedia Articles using 10 million vector embeddings.
+
+This demo illustrates a three step approach (Pre-Search, Rank, Generation):
+- Step 1: Pre-Search on Weaviate with Sparse Retrival (bm25), Dense Retrieval (neartext), or Hybrid Mode (bm25 + neartext).
+- Step 2: Cohere Rank Model re-organizes the Pre-Search by assigning a relevance score to each Pre-Search result given the query.
+- Step 3: Cohere Generation Model composes a response based on the ranked results.
+
+Author:
+    @dcarpintero : https://github.com/dcarpintero
+"""
 import streamlit as st
 import wikipedia
 
@@ -59,6 +70,7 @@ def query_llm(context, query, temperature, model, lang="english"):
 def onclick_sample_query(query):
     st.session_state.user_query_txt = query
 
+
 languages = {
     'Arabic': 'ar',
     'Chinese': 'zh',
@@ -116,6 +128,7 @@ with st.sidebar:
         "[![Cohere](https://img.shields.io/badge/Cohere%20LLMs-purple)](https://cohere.com/?ref=https://github.com/dcarpintero)"
     with col_we:
         "[![Weaviate](https://img.shields.io/badge/Weaviate-green)](https://weaviate.io/?ref=https://github.com/dcarpintero)"
+
 
 # -----------------------------------------------------------------------------
 # Ask Wikipedia Section
